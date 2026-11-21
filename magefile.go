@@ -21,3 +21,14 @@ func Test() error {
 func Run() error {
 	return sh.RunV("go", "run", "./cmd/wasdarfmeinticket", "serve")
 }
+
+// Web builds the browser app (PWA) into web/dist
+func Web() error {
+	if err := sh.RunV("npm", "--prefix", "web", "ci"); err != nil {
+		return err
+	}
+	if err := sh.RunV("npm", "--prefix", "web", "test"); err != nil {
+		return err
+	}
+	return sh.RunV("npm", "--prefix", "web", "run", "build")
+}

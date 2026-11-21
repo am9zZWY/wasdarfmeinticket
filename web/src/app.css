@@ -1,0 +1,280 @@
+:root {
+  --accent: #0f7647;
+  --text: #1c2321;
+  --muted: #5b6763;
+  --surface: #ffffff;
+  --raised: #f2f5f4;
+  --border: #d5dcd9;
+  --valid: #0f7647;
+  --partial: #9a5b00;
+  --invalid: #b3261e;
+  --unknown: #5b6763;
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  line-height: 1.45;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #4cc38a;
+    --text: #e6ecea;
+    --muted: #9fb0aa;
+    --surface: #121615;
+    --raised: #1c2321;
+    --border: #33403b;
+    --valid: #4cc38a;
+    --partial: #f0b354;
+    --invalid: #ff8a80;
+    --unknown: #9fb0aa;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+}
+
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+h1 {
+  margin: 0.5rem 0 0;
+  font-size: 1.6rem;
+}
+
+h2 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+header p,
+.hint,
+.when,
+footer {
+  color: var(--muted);
+}
+
+.hint,
+footer {
+  font-size: 0.9rem;
+}
+
+.hint,
+.when {
+  margin: 0.4rem 0;
+}
+
+footer {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border);
+}
+
+a {
+  color: var(--accent);
+}
+
+label {
+  display: block;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  color: var(--text);
+}
+
+input,
+select,
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.6rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+button {
+  padding: 0.6rem 1rem;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+button.primary {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.8rem 1rem;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+  font-weight: 600;
+}
+
+button.quiet {
+  padding: 0.3rem 0.6rem;
+  background: none;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.modes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.modes button {
+  flex: 1;
+}
+
+.modes button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.card {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.card > :first-child {
+  margin-top: 0;
+}
+
+.tickets,
+.legs,
+.stretches,
+.reasons,
+.progress {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tickets li,
+summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tickets li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+summary {
+  cursor: pointer;
+}
+
+.leg {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 0.5rem;
+}
+
+.stretches li {
+  display: flex;
+  flex-direction: column;
+  margin: 0.35rem 0;
+  padding-left: 0.6rem;
+  border-left: 0.3rem solid var(--unknown);
+}
+
+.stretches li.valid {
+  border-color: var(--valid);
+}
+
+.stretches li.invalid {
+  border-color: var(--invalid);
+}
+
+.stretches li span:first-child {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.reasons li {
+  margin: 0.75rem 0 0;
+}
+
+.reasons p {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+}
+
+.progress {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.verdict {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 0.35rem solid var(--unknown);
+  border-radius: 0.5rem;
+  background: var(--raised);
+  font-weight: 600;
+}
+
+.badge {
+  flex: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--unknown);
+}
+
+.verdict.valid {
+  border-color: var(--valid);
+}
+
+.verdict.partial {
+  border-color: var(--partial);
+}
+
+.verdict.invalid {
+  border-color: var(--invalid);
+}
+
+.badge.valid {
+  color: var(--valid);
+}
+
+.badge.partial {
+  color: var(--partial);
+}
+
+.badge.invalid {
+  color: var(--invalid);
+}
