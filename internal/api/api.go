@@ -322,7 +322,7 @@ func (service *Service) ResolveTicket(ctx context.Context, ticket check.Ticket) 
 	}
 	if service.Cache.Get(key, &cached) && len(cached.Zones) > 0 {
 		ticket.Net, ticket.Zones = cached.Net, cached.Zones
-		progress.Logf(ctx, "Ticket aus dem Cache: %s", ticketLabel(ticket))
+		progress.Logf(ctx, "Ticket aus dem Cache: %s", TicketLabel(ticket))
 		return ticket, nil
 	}
 	route, err := service.ticketRoute(ctx, ticket)
@@ -333,7 +333,7 @@ func (service *Service) ResolveTicket(ctx context.Context, ticket check.Ticket) 
 	if err != nil {
 		return resolved, err
 	}
-	progress.Logf(ctx, "Ticket aufgelöst: %s", ticketLabel(resolved))
+	progress.Logf(ctx, "Ticket aufgelöst: %s", TicketLabel(resolved))
 	cached.Net, cached.Zones = resolved.Net, resolved.Zones
 	service.Cache.Set(key, cached, ticketTTL)
 	return resolved, nil
@@ -343,7 +343,7 @@ func (service *Service) ResolveTicket(ctx context.Context, ticket check.Ticket) 
 // its share link, or the usual connection between its two stops.
 func (service *Service) ticketRoute(ctx context.Context, ticket check.Ticket) (journey.Journey, error) {
 	if ticket.Link != "" {
-		progress.Logf(ctx, "Ticket %s: Zonen aus dem Verbindungslink ermitteln", ticketLabel(ticket))
+		progress.Logf(ctx, "Ticket %s: Zonen aus dem Verbindungslink ermitteln", TicketLabel(ticket))
 		ref, err := dblink.Parse(ticket.Link)
 		if err != nil {
 			return journey.Journey{}, fmt.Errorf("ticket link: %w", err)
@@ -357,7 +357,7 @@ func (service *Service) ticketRoute(ctx context.Context, ticket check.Ticket) (j
 	if service.Stops == nil || service.Timetable == nil {
 		return journey.Journey{}, errors.New("tickets described by from/to are not supported by this server")
 	}
-	progress.Logf(ctx, "Ticket %s: Zonen für die Strecke ermitteln", ticketLabel(ticket))
+	progress.Logf(ctx, "Ticket %s: Zonen für die Strecke ermitteln", TicketLabel(ticket))
 	from, to, err := service.findStops(ctx, ticket.From, ticket.To)
 	if err != nil {
 		return journey.Journey{}, err
