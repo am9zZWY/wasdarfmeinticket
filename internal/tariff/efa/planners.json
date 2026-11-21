@@ -1,0 +1,20 @@
+[
+  {
+    "name": "MVV",
+    "baseURL": "https://efa.mvv-muenchen.de/ng/",
+    "nets": ["mvv"],
+    "bbox": {"minLat": 47.6, "maxLat": 48.7, "minLon": 10.9, "maxLon": 12.4}
+  },
+  {
+    "name": "Bahnland Bayern",
+    "baseURL": "https://bahnland-bayern.de/efa/",
+    "nets": ["vgn"],
+    "bbox": {"minLat": 47.2, "maxLat": 50.6, "minLon": 8.9, "maxLon": 13.9}
+  },
+  {
+    "name": "EFA-BW",
+    "baseURL": "https://www.efa-bw.de/nvbw/",
+    "nets": ["tub", "vhb", "fds"],
+    "bbox": {"minLat": 47.5, "maxLat": 49.8, "minLon": 7.5, "maxLon": 10.5}
+  }
+]
