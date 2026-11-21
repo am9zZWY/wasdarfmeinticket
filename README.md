@@ -207,6 +207,56 @@ those checks take longer.
 HTTP status: `400` bad link or ticket, `404` link unknown to bahn.de, `503`
 bahn.de is blocking this client, `502` other upstream failure.
 
+## Browser app
+
+`web/` holds an installable web app (PWA) that needs no server of its own:
+a small Svelte page, and the Go code of this repository compiled to
+WebAssembly. The check runs on the device, and the requests go straight
+from the browser to the timetable and tariff services. Tickets are kept in
+the browser's storage, as is the [cache](#cache).
+
+A browser may only call services that allow it, which narrows what works:
+
+| Source | In the browser |
+| --- | --- |
+| Transitous (stops, connections) | works |
+| Planner EFA-BW | works |
+| Planner MVV | blocked: zones of the MVV stay unknown |
+| Planner Bahnland Bayern | not verified |
+| bahn.de share-link lookup | blocked, see below |
+
+A share link (`…?vbid=<id>`) can therefore not be looked up by the page.
+The app then offers a link to bahn.de's answer, which the browser itself
+may open, and a field to paste that answer into. Connection links, search
+links and start/destination/time work directly.
+
+On a phone the installed app appears in the share menu, so a link can be
+sent to it from the DB Navigator.
+
+```sh
+cd web
+npm ci
+npm run dev      # builds the engine, serves the app with live reload
+npm test         # tests of the page, with a stand-in engine
+npm run build    # builds the engine and the app into web/dist
+```
+
+`web/dist` can be served by any static host. For GitHub Pages the build
+goes onto the branch `dist/app`, which holds nothing but the current
+build:
+
+```sh
+npm run build && npm run branch
+git push --force origin dist/app
+```
+
+The workflow `.github/workflows/app.yml` does the same on every push to
+the main branch. In the repository settings, Pages has to be set to
+"Deploy from a branch", `dist/app`, `/ (root)`.
+
+The engine is about 12 MB (3 MB compressed). It is downloaded once; after
+that the app starts from the device's storage, also without a network.
+
 ## Coverage and limits
 
 | Planner | Area | Verbünde with verified zone data |

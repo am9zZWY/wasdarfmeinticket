@@ -1,0 +1,5 @@
+node_modules/
+dist/
+# Built from the Go sources by "npm run engine".
+public/engine.wasm
+src/generated/
