@@ -15,8 +15,9 @@ import (
 // Cache is a key/value store with expiry. A nil *Cache is valid and stores
 // nothing.
 type Cache struct {
-	path string
-	now  func() time.Time
+	// persist, if set, receives the whole content after every change.
+	persist func(data []byte)
+	now     func() time.Time
 
 	mutex   sync.Mutex
 	entries map[string]entry
@@ -27,23 +28,30 @@ type entry struct {
 	Value   json.RawMessage `json:"value"`
 }
 
+// New returns a cache that starts with the stored content, if there is
+// any, and hands its content to persist after every change. Both may be
+// nil, which gives an empty cache that lives in memory only. Content that
+// cannot be read is not an error: the cache starts empty.
+func New(stored []byte, persist func(data []byte)) *Cache {
+	cache := &Cache{persist: persist, now: time.Now, entries: map[string]entry{}}
+	// Expired entries are loaded as well: Get ignores them and the next
+	// change drops them.
+	var entries map[string]entry
+	if json.Unmarshal(stored, &entries) == nil && entries != nil {
+		cache.entries = entries
+	}
+	return cache
+}
+
 // Open returns a cache backed by the file at path, loading what is there.
 // An empty path gives a memory-only cache. A missing or unreadable file is
 // not an error: the cache starts empty.
 func Open(path string) *Cache {
-	cache := &Cache{path: path, now: time.Now, entries: map[string]entry{}}
 	if path == "" {
-		return cache
+		return New(nil, nil)
 	}
-	if data, err := os.ReadFile(path); err == nil {
-		var stored map[string]entry
-		// Expired entries are loaded as well: Get ignores them and the
-		// next change drops them.
-		if json.Unmarshal(data, &stored) == nil && stored != nil {
-			cache.entries = stored
-		}
-	}
-	return cache
+	stored, _ := os.ReadFile(path)
+	return New(stored, func(data []byte) { writeFile(path, data) })
 }
 
 // Get loads the value stored under key into out and reports whether a
@@ -77,9 +85,10 @@ func (cache *Cache) Set(key string, value any, ttl time.Duration) {
 	cache.save()
 }
 
-// save writes the file atomically; the caller holds the lock.
+// save drops expired entries and persists the rest; the caller holds the
+// lock.
 func (cache *Cache) save() {
-	if cache.path == "" {
+	if cache.persist == nil {
 		return
 	}
 	now := cache.now()
@@ -88,20 +97,24 @@ func (cache *Cache) save() {
 			delete(cache.entries, key)
 		}
 	}
-	data, err := json.Marshal(cache.entries)
-	if err != nil {
+	if data, err := json.Marshal(cache.entries); err == nil {
+		cache.persist(data)
+	}
+}
+
+// writeFile replaces the file atomically. Failures are ignored: a cache
+// must never break a check.
+func writeFile(path string, data []byte) {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return
 	}
-	if err := os.MkdirAll(filepath.Dir(cache.path), 0o755); err != nil {
-		return
-	}
-	tmp, err := os.CreateTemp(filepath.Dir(cache.path), ".cache-*")
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".cache-*")
 	if err != nil {
 		return
 	}
 	_, werr := tmp.Write(data)
 	cerr := tmp.Close()
-	if werr != nil || cerr != nil || os.Rename(tmp.Name(), cache.path) != nil {
+	if werr != nil || cerr != nil || os.Rename(tmp.Name(), path) != nil {
 		os.Remove(tmp.Name())
 	}
 }

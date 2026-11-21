@@ -107,7 +107,9 @@ func (client *Client) once(ctx context.Context, url string, out any) (bool, erro
 	if err != nil {
 		return false, err
 	}
-	req.Header.Set("User-Agent", client.UserAgent)
+	if sendUserAgent {
+		req.Header.Set("User-Agent", client.UserAgent)
+	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Accept-Language", "de")
 	resp, err := client.HTTP.Do(req)
