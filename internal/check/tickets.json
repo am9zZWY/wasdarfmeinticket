@@ -1,0 +1,27 @@
+{
+  "deutschlandticketPattern": "(?i)deutschland-?ticket|d-ticket",
+  "netAliases": {
+    "naldo": "tub"
+  },
+  "laendertickets": [
+    {
+      "id": "baden-wuerttemberg-ticket",
+      "label": "Baden-Württemberg-Ticket",
+      "productPattern": "(?i)^baden-württemberg-ticket",
+      "weekdayStartHour": 9
+    },
+    {
+      "id": "bayern-ticket",
+      "label": "Bayern-Ticket",
+      "productPattern": "(?i)^bayern[- ]ticket( tag.*)?$",
+      "weekdayStartHour": 9
+    },
+    {
+      "id": "quer-durchs-land-ticket",
+      "label": "Quer-durchs-Land-Ticket",
+      "productPattern": "(?i)quer[- ]durchs[- ]land",
+      "weekdayStartHour": 9,
+      "nationwideTrains": true
+    }
+  ]
+}
