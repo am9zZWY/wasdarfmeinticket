@@ -77,6 +77,20 @@ curl -s localhost:8080/v1/check -d '{
 }'
 ```
 
+### Docker
+
+The image holds nothing but the binary and the CA certificates, about
+11 MB. `--build-arg COMPRESS=1` packs the binary with UPX and brings the
+image to about 5 MB, at the price of a slower start.
+
+```sh
+docker build -t wasdarfmeinticket .
+docker run --rm -p 8080:8080 -v wasdarfmeinticket-cache:/cache wasdarfmeinticket
+```
+
+It starts the HTTP API on port 8080 as an unprivileged user and keeps the
+[cache](#cache) in `/cache`.
+
 ### Output format
 
 The check result comes as JSON or as a short German Markdown text for
