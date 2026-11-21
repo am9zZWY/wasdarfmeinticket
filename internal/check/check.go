@@ -169,6 +169,21 @@ var rules = func() (loaded struct {
 	return loaded
 }()
 
+// Option is one choice a user has when describing a ticket.
+type Option struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
+// LaenderticketOptions lists the supported names for type "laenderticket".
+func LaenderticketOptions() []Option {
+	var options []Option
+	for _, stateTicket := range rules.Laendertickets {
+		options = append(options, Option{ID: stateTicket.ID, Label: stateTicket.Label})
+	}
+	return options
+}
+
 // LaenderticketLabel returns the display name for a "laenderticket" name.
 func LaenderticketLabel(name string) string {
 	if stateTicket := findLaenderticket(name); stateTicket != nil {
