@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import App from './App.svelte';
 import { loadEngine } from './lib/engine.js';
@@ -55,20 +55,25 @@ beforeEach(() => {
     }),
     ticketLabel: (ticket) => (ticket.type === 'deutschlandticket' ? 'Deutschlandticket' : `Verbundticket ${ticket.net}`),
     laendertickets: [{ id: 'bayern-ticket', label: 'Bayern-Ticket' }],
+    suggestStops: vi.fn(async (text) => (text.startsWith('Rott') ? ['Rottenburg (Neckar)', 'Rottweil'] : [])),
   };
   loadEngine.mockResolvedValue(engine);
 });
 
 afterEach(cleanup);
 
+const addTicket = async (text) => {
+  await fireEvent.input(await screen.findByLabelText('Welches Ticket hast du?'), { target: { value: text } });
+  await fireEvent.click(screen.getByRole('button', { name: 'Hinzufügen' }));
+};
+
 const checkButton = () => screen.findByRole('button', { name: 'Prüfen' });
 
 test('checks a connection given by start and destination', async () => {
   render(App);
-  await fireEvent.click(await screen.findByRole('button', { name: 'Ticket hinzufügen' }));
+  await addTicket('Deutschlandticket');
   expect(await screen.findByText('Deutschlandticket', { selector: 'li span' })).toBeTruthy();
 
-  await fireEvent.click(screen.getByRole('button', { name: 'Start und Ziel' }));
   await fireEvent.input(screen.getByLabelText('Von'), { target: { value: 'Rottenburg' } });
   await fireEvent.input(screen.getByLabelText('Nach'), { target: { value: 'Horb' } });
   await fireEvent.input(screen.getByLabelText('Abfahrt'), { target: { value: '2026-11-23T10:45' } });
@@ -85,11 +90,53 @@ test('checks a connection given by start and destination', async () => {
   expect(screen.getByText('kein Ticket')).toBeTruthy();
   expect(screen.getByText('RB74: Eyach → Horb')).toBeTruthy();
   expect(screen.getByText('gültig von Rottenburg bis Eyach')).toBeTruthy();
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Andere Verbindung prüfen' }));
+  expect(screen.getByLabelText('Von').value).toBe('Rottenburg');
+});
+
+test('suggests stops once three letters are typed', async () => {
+  render(App);
+  const from = await screen.findByLabelText('Von');
+  await fireEvent.focus(from);
+  await fireEvent.input(from, { target: { value: 'Ro' } });
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  expect(engine.suggestStops).not.toHaveBeenCalled();
+
+  await fireEvent.input(from, { target: { value: 'Rott' } });
+  await fireEvent.input(from, { target: { value: 'Rotte' } });
+  const option = await screen.findByRole('option', { name: 'Rottenburg (Neckar)' });
+  expect(engine.suggestStops).toHaveBeenCalledTimes(1); // only once the typing pauses
+
+  await fireEvent.mouseDown(option);
+  expect(from.value).toBe('Rottenburg (Neckar)');
+  expect(screen.queryByRole('listbox')).toBeNull();
+});
+
+test('offers the tickets with their kind and picks one by keyboard', async () => {
+  render(App);
+  const search = await screen.findByLabelText('Welches Ticket hast du?');
+  await fireEvent.focus(search);
+  await fireEvent.input(search, { target: { value: 'ba' } });
+  expect(within(await screen.findByRole('listbox')).getAllByRole('option').map((option) => option.textContent.trim().replace(/\s+/g, ' '))).toEqual(['Bayern-Ticket Bundesland']);
+
+  await fireEvent.keyDown(search, { key: 'ArrowDown' });
+  await fireEvent.keyDown(search, { key: 'Enter' });
+  expect(search.value).toBe('Bayern-Ticket');
+});
+
+test('swaps start and destination', async () => {
+  render(App);
+  await fireEvent.input(await screen.findByLabelText('Von'), { target: { value: 'Rottenburg' } });
+  await fireEvent.input(screen.getByLabelText('Nach'), { target: { value: 'Horb' } });
+  await fireEvent.click(screen.getByRole('button', { name: 'Start und Ziel tauschen' }));
+  expect(screen.getByLabelText('Von').value).toBe('Horb');
+  expect(screen.getByLabelText('Nach').value).toBe('Rottenburg');
 });
 
 test('keeps the tickets on the device', async () => {
   const first = render(App);
-  await fireEvent.click(await screen.findByRole('button', { name: 'Ticket hinzufügen' }));
+  await addTicket('Deutschlandticket');
   await waitFor(() => expect(JSON.parse(localStorage.getItem('wasdarfmeinticket.tickets'))).toEqual([{ type: 'deutschlandticket' }]));
   first.unmount();
 
@@ -121,6 +168,7 @@ test('sends other links as they are and shows a failure', async () => {
   render(App);
 
   const link = 'https://www.bahn.de/buchung/fahrplan/suche#so=A&zo=B';
+  await fireEvent.click(await screen.findByRole('button', { name: 'Link' }));
   await fireEvent.input(await screen.findByLabelText('Link von bahn.de oder aus dem DB Navigator'), { target: { value: link } });
   await fireEvent.click(await checkButton());
 
@@ -130,16 +178,32 @@ test('sends other links as they are and shows a failure', async () => {
 
 test('describes a Verbund ticket by zones', async () => {
   render(App);
-  await fireEvent.change(await screen.findByLabelText('Art'), { target: { value: 'verbund' } });
-  const add = screen.getByRole('button', { name: 'Ticket hinzufügen' });
+  const add = await screen.findByRole('button', { name: 'Hinzufügen' });
   expect(add.disabled).toBe(true);
 
-  await fireEvent.input(screen.getByLabelText('Verbund'), { target: { value: 'naldo' } });
+  await fireEvent.input(screen.getByLabelText('Welches Ticket hast du?'), { target: { value: 'naldo (Neckar-Alb-Donau)' } });
   await fireEvent.change(screen.getByLabelText('Gilt für'), { target: { value: 'zones' } });
   await fireEvent.input(screen.getByLabelText('Zonen'), { target: { value: '11, 220' } });
   await fireEvent.click(add);
 
   await waitFor(() =>
     expect(JSON.parse(localStorage.getItem('wasdarfmeinticket.tickets'))).toEqual([{ type: 'verbund', net: 'naldo', zones: ['11', '220'] }]),
+  );
+});
+
+test('finds tickets by name or abbreviation and takes unknown text as a Verbund', async () => {
+  render(App);
+  await addTicket('bayern-ticket');
+  await fireEvent.click(await screen.findByRole('button', { name: '+ Ticket' }));
+  await addTicket('vgn');
+  await fireEvent.click(await screen.findByRole('button', { name: '+ Ticket' }));
+  await addTicket('vvs');
+
+  await waitFor(() =>
+    expect(JSON.parse(localStorage.getItem('wasdarfmeinticket.tickets'))).toEqual([
+      { type: 'laenderticket', name: 'bayern-ticket' },
+      { type: 'verbund', net: 'vgn', network: true },
+      { type: 'verbund', net: 'vvs', network: true },
+    ]),
   );
 });

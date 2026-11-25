@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { loadEngine } from './lib/engine.js';
   import Result from './lib/Result.svelte';
+  import Suggest from './lib/Suggest.svelte';
   import { loadTickets, saveTickets } from './lib/storage.js';
   import Tickets from './lib/Tickets.svelte';
 
@@ -9,8 +10,8 @@
   let engineError = $state('');
 
   let tickets = $state(loadTickets());
-  let mode = $state('link'); // how the connection is given: link or stops
   let link = $state(sharedText());
+  let mode = $state(link ? 'link' : 'stops'); // how the connection is given: stops or link
   let pastedAnswer = $state('');
   let from = $state('');
   let to = $state('');
@@ -78,6 +79,17 @@
     }
   }
 
+  // Stop names for the suggestions under the stop fields. Transitous asks
+  // its users to go easy on it: only from 3 letters on, and only once the
+  // typing pauses.
+  async function suggestStops(text) {
+    return engine ? (await engine.suggestStops(text)).map((name) => ({ value: name })) : [];
+  }
+
+  function swap() {
+    [from, to] = [to, from];
+  }
+
   // When the app is opened through the system's share menu, the shared
   // link arrives in the page address.
   function sharedText() {
@@ -99,21 +111,32 @@
 </script>
 
 <main>
-  <header>
-    <h1>Was darf mein Ticket?</h1>
-    <p>Prüft, auf welchen Abschnitten einer Verbindung deine Tickets gelten.</p>
-  </header>
+  {#if outcome}
+    <button type="button" class="quiet" onclick={() => (outcome = null)}>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4l-5 5 5 5" /></svg>
+      Ändern
+    </button>
+    <Result view={outcome.view} markdown={outcome.markdown} />
+    <button type="button" class="secondary" onclick={() => (outcome = null)}>Andere Verbindung prüfen</button>
+  {:else}
+    <header>
+      <h1>Was darf mein Ticket?</h1>
+      <p>Gib eine Verbindung ein und sieh, wo deine Tickets gelten.</p>
+    </header>
 
-  {#if engineError}
-    <p class="verdict invalid" role="alert">Die App konnte nicht starten: {engineError}</p>
-  {/if}
+    {#if engineError}
+      <p class="verdict invalid" role="alert">Die App konnte nicht starten: {engineError}</p>
+    {/if}
 
-  <form onsubmit={check}>
-    <section>
-      <h2>Verbindung</h2>
-      <div class="modes" role="group" aria-label="Verbindung angeben über">
-        <button type="button" class:active={mode === 'link'} aria-pressed={mode === 'link'} onclick={() => (mode = 'link')}>Link</button>
-        <button type="button" class:active={mode === 'stops'} aria-pressed={mode === 'stops'} onclick={() => (mode = 'stops')}>Start und Ziel</button>
+    <Tickets bind:tickets laendertickets={engine?.laendertickets ?? []} {suggestStops} labelOf={(ticket) => engine?.ticketLabel(ticket) || ticket.type} />
+
+    <form class="card" onsubmit={check} id="connection">
+      <div class="card-head">
+        <h2>Verbindung</h2>
+        <div class="modes" role="group" aria-label="Verbindung angeben über">
+          <button type="button" class:active={mode === 'stops'} aria-pressed={mode === 'stops'} onclick={() => (mode = 'stops')}>Strecke</button>
+          <button type="button" class:active={mode === 'link'} aria-pressed={mode === 'link'} onclick={() => (mode = 'link')}>Link</button>
+        </div>
       </div>
 
       {#if mode === 'link'}
@@ -122,45 +145,46 @@
           <textarea bind:value={link} rows="3" placeholder="https://www.bahn.de/buchung/…"></textarea>
         </label>
         {#if linkInfo.kind === 'share'}
-          <div class="card">
-            <p>
-              Das ist ein geteilter Link. Die Bahn lässt Webseiten ihn nicht nachschlagen, dein Browser darf es aber:
-            </p>
-            <ol>
-              <li><a href={linkInfo.lookupURL} target="_blank" rel="noopener">Antwort von bahn.de öffnen</a></li>
-              <li>Dort den ganzen Text kopieren.</li>
-              <li>Hier einfügen:</li>
-            </ol>
-            <label>
-              Antwort von bahn.de
-              <textarea bind:value={pastedAnswer} rows="3" placeholder={'{"hinfahrtRecon": …'}></textarea>
-            </label>
-            <p class="hint">
-              Ohne diesen Umweg geht es mit der Adresse, die bahn.de bei geöffneter Verbindung in der Adresszeile zeigt.
-            </p>
-          </div>
+          <p class="hint">
+            Das ist ein geteilter Link. Die Bahn lässt Webseiten ihn nicht nachschlagen, dein Browser darf es aber:
+          </p>
+          <ol class="hint">
+            <li><a href={linkInfo.lookupURL} target="_blank" rel="noopener">Antwort von bahn.de öffnen</a></li>
+            <li>Dort den ganzen Text kopieren.</li>
+            <li>Hier einfügen:</li>
+          </ol>
+          <label>
+            Antwort von bahn.de
+            <textarea bind:value={pastedAnswer} rows="3" placeholder={'{"hinfahrtRecon": …'}></textarea>
+          </label>
+          <p class="hint">
+            Ohne diesen Umweg geht es mit der Adresse, die bahn.de bei geöffneter Verbindung in der Adresszeile zeigt.
+          </p>
         {:else if linkInfo.kind === 'search'}
           <p class="hint">Suchlink: Es wird die erste Verbindung ab der gesuchten Zeit genommen.</p>
+        {:else}
+          <p class="hint">Im Navigator: Verbindung öffnen › Teilen › Link kopieren.</p>
         {/if}
       {:else}
-        <label>
-          Von
-          <input bind:value={from} placeholder="Haltestelle" />
-        </label>
-        <label>
-          Nach
-          <input bind:value={to} placeholder="Haltestelle" />
-        </label>
-        <label>
-          Abfahrt
-          <input type="datetime-local" bind:value={departure} />
-        </label>
+        <div class="fields">
+          <div class="stops">
+            <div class="fields">
+              <Suggest label="Von" bind:value={from} suggest={suggestStops} delay={250} minLength={3} placeholder="z. B. Tübingen Hbf" />
+              <Suggest label="Nach" bind:value={to} suggest={suggestStops} delay={250} minLength={3} placeholder="z. B. Heidelberg Hbf" />
+            </div>
+            <button type="button" class="round" onclick={swap} aria-label="Start und Ziel tauschen">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v12M3 6l3-3 3 3M12 15V3M9 12l3 3 3-3" /></svg>
+            </button>
+          </div>
+          <label>
+            Abfahrt
+            <input type="datetime-local" bind:value={departure} />
+          </label>
+        </div>
       {/if}
-    </section>
+    </form>
 
-    <Tickets bind:tickets laendertickets={engine?.laendertickets ?? []} labelOf={(ticket) => engine?.ticketLabel(ticket) || ticket.type} />
-
-    <button type="submit" class="primary" disabled={!engine || running || Boolean(plan.problem)}>
+    <button type="submit" form="connection" class="primary" disabled={!engine || running || Boolean(plan.problem)}>
       {#if !engine && !engineError}
         Wird geladen …
       {:else if running}
@@ -172,29 +196,30 @@
     {#if engine && plan.problem}
       <p class="hint">{plan.problem}</p>
     {/if}
-  </form>
 
-  {#if running || (failure && progress.length > 0)}
-    <ul class="progress" aria-live="polite">
-      {#each progress as message}
-        <li>{message}</li>
-      {/each}
-    </ul>
-  {/if}
+    {#if running || (failure && progress.length > 0)}
+      <ul class="progress" aria-live="polite">
+        {#each progress as message}
+          <li>{message}</li>
+        {/each}
+      </ul>
+    {/if}
 
-  {#if failure}
-    <p class="verdict invalid" role="alert">{failure}</p>
-  {/if}
-
-  {#if outcome}
-    <Result view={outcome.view} markdown={outcome.markdown} />
+    {#if failure}
+      <p class="verdict invalid" role="alert">{failure}</p>
+    {/if}
   {/if}
 
   <footer>
     <p>
-      Fahrplandaten: <a href="https://transitous.org" target="_blank" rel="noopener">Transitous</a> (DELFI, CC-BY-4.0). Zonen und Tarife: Auskünfte
-      der Verkehrsverbünde. Alle Angaben ohne Gewähr.
+      Fahrplandaten: <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous und seine Quellen</a>. Haltestellen und
+      Karten: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap-Mitwirkende</a>. Zonen und Tarife:
+      Auskünfte der Verkehrsverbünde. Alle Angaben ohne Gewähr.
     </p>
     <p>Deine Tickets bleiben auf diesem Gerät. Anfragen gehen direkt von hier an die Auskünfte.</p>
+    <p>
+      Kontakt, Fehler melden und Quellcode:
+      <a href="https://github.com/am9zZWY/wasdarfmeinticket" target="_blank" rel="noopener">github.com/am9zZWY/wasdarfmeinticket</a>
+    </p>
   </footer>
 </main>
