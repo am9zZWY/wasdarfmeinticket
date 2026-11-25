@@ -24,11 +24,11 @@ func Run() error {
 
 // Web builds the browser app (PWA) into web/dist
 func Web() error {
-	if err := sh.RunV("npm", "--prefix", "web", "ci"); err != nil {
+	if err := sh.RunV("bun", "install", "--cwd", "web", "--frozen-lockfile"); err != nil {
 		return err
 	}
-	if err := sh.RunV("npm", "--prefix", "web", "test"); err != nil {
+	if err := sh.RunV("bun", "run", "--cwd", "web", "test"); err != nil {
 		return err
 	}
-	return sh.RunV("npm", "--prefix", "web", "run", "build")
+	return sh.RunV("bun", "run", "--cwd", "web", "build")
 }

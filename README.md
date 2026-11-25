@@ -235,10 +235,10 @@ sent to it from the DB Navigator.
 
 ```sh
 cd web
-npm ci
-npm run dev      # builds the engine, serves the app with live reload
-npm test         # tests of the page, with a stand-in engine
-npm run build    # builds the engine and the app into web/dist
+bun install --frozen-lockfile
+bun run dev      # builds the engine, serves the app with live reload
+bun run test     # tests of the page, with a stand-in engine
+bun run build    # builds the engine and the app into web/dist
 ```
 
 `web/dist` can be served by any static host. For GitHub Pages the build
@@ -246,7 +246,7 @@ goes onto the branch `dist/app`, which holds nothing but the current
 build:
 
 ```sh
-npm run build && npm run branch
+bun run build && bun run branch
 git push --force origin dist/app
 ```
 

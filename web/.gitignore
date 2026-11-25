@@ -1,5 +1,5 @@
 node_modules/
 dist/
-# Built from the Go sources by "npm run engine".
+# Built from the Go sources by "bun run engine".
 public/engine.wasm
 src/generated/

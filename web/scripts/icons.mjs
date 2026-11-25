@@ -1,5 +1,5 @@
 // Draws the app icon (a white check mark on a green rounded square) as PNG
-// files, without any image library: node scripts/icons.mjs
+// files, without any image library: bun scripts/icons.mjs
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

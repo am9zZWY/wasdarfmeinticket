@@ -4,12 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "engine": "node scripts/engine.mjs",
-    "dev": "npm run engine && vite",
-    "build": "npm run engine && vite build",
+    "engine": "bun scripts/engine.mjs",
+    "dev": "bun run engine && vite",
+    "build": "bun run engine && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "branch": "node scripts/branch.mjs"
+    "branch": "bun scripts/branch.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

@@ -2,7 +2,7 @@
 // a single commit without history: the branch only ever holds the current
 // build. Nothing is pushed and the working tree is not touched.
 //
-//   npm run build && npm run branch && git push --force origin dist/app
+//   bun run build && bun run branch && git push --force origin dist/app
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,7 +14,7 @@ const branch = 'dist/app';
 const web = join(dirname(fileURLToPath(import.meta.url)), '..');
 const output = join(web, 'dist');
 if (!existsSync(join(output, 'index.html')) || !existsSync(join(output, 'engine.wasm'))) {
-  console.error('web/dist is incomplete: run "npm run build" first');
+  console.error('web/dist is incomplete: run "bun run build" first');
   process.exit(1);
 }
 
