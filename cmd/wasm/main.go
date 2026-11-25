@@ -6,6 +6,7 @@
 //
 //	check(requestJSON, onProgress)  Promise of {view, markdown} as JSON
 //	resolveTicket(ticketJSON)       Promise of the ticket with net and zones as JSON
+//	suggestStops(text)              Promise of the names of matching stops as JSON
 //	describeLink(text)              what a pasted link is, as JSON
 //	ticketLabel(ticketJSON)         display name of a ticket
 //	laendertickets                  the supported Länderticket names, as JSON
@@ -18,6 +19,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"syscall/js"
 	"time"
 
@@ -51,6 +53,7 @@ func main() {
 	js.Global().Set("wasdarfmeinticket", map[string]any{
 		"check":          async(func(args []js.Value) (string, error) { return runCheck(service, args) }),
 		"resolveTicket":  async(func(args []js.Value) (string, error) { return resolveTicket(service, args) }),
+		"suggestStops":   async(func(args []js.Value) (string, error) { return suggestStops(timetable, text(args, 0)) }),
 		"describeLink":   js.FuncOf(func(_ js.Value, args []js.Value) any { return describeLink(text(args, 0)) }),
 		"ticketLabel":    js.FuncOf(func(_ js.Value, args []js.Value) any { return ticketLabel(text(args, 0)) }),
 		"laendertickets": encode(check.LaenderticketOptions()),
@@ -90,6 +93,28 @@ func resolveTicket(service *api.Service, args []js.Value) (string, error) {
 		return "", err
 	}
 	return encode(resolved), nil
+}
+
+// suggestTimeout bounds one lookup of suggestions: an answer that comes
+// later is of no use to someone typing.
+const suggestTimeout = 5 * time.Second
+
+// suggestStops returns the names of the stops matching a partly typed
+// text, without repeats, best first.
+func suggestStops(timetable *transitous.Client, input string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), suggestTimeout)
+	defer cancel()
+	stops, err := timetable.SuggestStops(ctx, input)
+	if err != nil {
+		return "", err
+	}
+	names := []string{}
+	for _, stop := range stops {
+		if !slices.Contains(names, stop.Name) {
+			names = append(names, stop.Name)
+		}
+	}
+	return encode(names), nil
 }
 
 // describeLink says what kind of link a pasted text contains. For a share

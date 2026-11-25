@@ -305,6 +305,27 @@ func (client *Client) FindStop(ctx context.Context, name string) (journey.Stop, 
 		return hit, nil
 	}
 	progress.Logf(ctx, "Transitous: Haltestelle %q suchen", name)
+	matches, err := client.geocode(ctx, name)
+	if err != nil {
+		return journey.Stop{}, err
+	}
+	if len(matches) == 0 {
+		return journey.Stop{}, fmt.Errorf("stop %q not found", name)
+	}
+	client.Cache.Set(key, matches[0], stopTTL)
+	return matches[0], nil
+}
+
+// SuggestStops returns the stops whose names match a partly typed text,
+// best first. It is meant for suggestions while typing, so nothing is
+// cached here: that would fill the cache with every prefix.
+func (client *Client) SuggestStops(ctx context.Context, text string) ([]journey.Stop, error) {
+	return client.geocode(ctx, text)
+}
+
+// geocode asks Transitous for the stops matching a text, best first;
+// places that are not stops are left out.
+func (client *Client) geocode(ctx context.Context, text string) ([]journey.Stop, error) {
 	var matches []struct {
 		Type string  `json:"type"`
 		Name string  `json:"name"`
@@ -312,18 +333,17 @@ func (client *Client) FindStop(ctx context.Context, name string) (journey.Stop, 
 		Lat  float64 `json:"lat"`
 		Lon  float64 `json:"lon"`
 	}
-	query := url.Values{"text": {name}}
+	query := url.Values{"text": {text}}
 	if err := client.HTTP.GetJSON(ctx, client.BaseURL+"/v1/geocode?"+query.Encode(), &matches); err != nil {
-		return journey.Stop{}, fmt.Errorf("transitous: look up stop %q: %w", name, err)
+		return nil, fmt.Errorf("transitous: look up stop %q: %w", text, err)
 	}
+	var found []journey.Stop
 	for _, match := range matches {
 		if match.Type == "STOP" && (match.Lat != 0 || match.Lon != 0) {
-			stop := journey.Stop{Name: match.Name, ID: stationID(match.ID), Lat: match.Lat, Lon: match.Lon}
-			client.Cache.Set(key, stop, stopTTL)
-			return stop, nil
+			found = append(found, journey.Stop{Name: match.Name, ID: stationID(match.ID), Lat: match.Lat, Lon: match.Lon})
 		}
 	}
-	return journey.Stop{}, fmt.Errorf("stop %q not found", name)
+	return found, nil
 }
 
 func stops(plannerLeg planLeg) []journey.Stop {

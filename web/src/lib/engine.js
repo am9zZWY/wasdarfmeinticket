@@ -23,12 +23,26 @@ async function start() {
   }
   go.run(source.instance); // keeps running; the engine registers itself
   const engine = globalThis.wasdarfmeinticket;
+  // ponytail: suggestions are kept for the session only, unbounded; a
+  // session types few enough texts for that.
+  const suggestions = new Map();
   return {
     // check runs a check; onProgress receives each progress message.
     // It resolves with { view, markdown }.
     check: async (request, onProgress) => JSON.parse(await engine.check(JSON.stringify(request), onProgress)),
     // describeLink says what a pasted text is: { kind, lookupURL?, error? }
     // with kind "share", "connection", "search" or "none".
+    // suggestStops resolves with the names of the stops matching a partly
+    // typed text, best first. Repeated texts are answered from memory.
+    suggestStops: (text) => {
+      const key = text.toLowerCase();
+      if (!suggestions.has(key)) {
+        const lookup = engine.suggestStops(text).then(JSON.parse);
+        lookup.catch(() => suggestions.delete(key)); // ask again next time
+        suggestions.set(key, lookup);
+      }
+      return suggestions.get(key);
+    },
     describeLink: (text) => JSON.parse(engine.describeLink(text)),
     ticketLabel: (ticket) => engine.ticketLabel(JSON.stringify(ticket)),
     laendertickets: JSON.parse(engine.laendertickets),

@@ -218,6 +218,17 @@ func TestFindStop(t *testing.T) {
 	}
 }
 
+func TestSuggestStops(t *testing.T) {
+	client := testClient(t, nil)
+	stops, err := client.SuggestStops(context.Background(), "Rottenburg(Neckar)")
+	if err != nil || len(stops) != 1 || stops[0].Name != "Rottenburg (Neckar)" {
+		t.Errorf("stops = %+v, %v", stops, err)
+	}
+	if stops, err := client.SuggestStops(context.Background(), "nowhere"); err != nil || len(stops) != 0 {
+		t.Errorf("only places: stops = %+v, %v", stops, err)
+	}
+}
+
 func TestStationID(t *testing.T) {
 	for input, want := range map[string]string{
 		"de-DELFI_de:08416:1005:3:2": "de:08416:1005",
