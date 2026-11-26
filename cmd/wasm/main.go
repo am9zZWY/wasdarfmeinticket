@@ -10,6 +10,7 @@
 //	describeLink(text)              what a pasted link is, as JSON
 //	ticketLabel(ticketJSON)         display name of a ticket
 //	laendertickets                  the supported Länderticket names, as JSON
+//	verbuende                       the offered Verbund net codes and names, as JSON
 //
 // Requests go straight from the browser to the upstreams, so only those
 // that allow cross-origin requests can be used. bahn.de does not: a share
@@ -47,10 +48,10 @@ func main() {
 	timetable := transitous.New()
 	timetable.Cache = store
 	planners := efa.New(journey.Berlin)
-	planners.Cache = store
 	// Planners without CORS headers are blocked by the browser; asking them
 	// only fails, once per leg.
 	planners.Planners = slices.DeleteFunc(planners.Planners, func(planner efa.Planner) bool { return !planner.Browser })
+	planners.Cache = store
 	service := &api.Service{DB: db, Tariff: planners, Timetable: timetable, Stops: timetable, Cache: store}
 
 	js.Global().Set("wasdarfmeinticket", map[string]any{
@@ -60,6 +61,7 @@ func main() {
 		"describeLink":   js.FuncOf(func(_ js.Value, args []js.Value) any { return describeLink(text(args, 0)) }),
 		"ticketLabel":    js.FuncOf(func(_ js.Value, args []js.Value) any { return ticketLabel(text(args, 0)) }),
 		"laendertickets": encode(check.LaenderticketOptions()),
+		"verbuende":      encode(check.VerbundOptions()),
 	})
 	select {} // keep the functions alive for the page
 }

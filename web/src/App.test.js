@@ -55,6 +55,7 @@ beforeEach(() => {
     }),
     ticketLabel: (ticket) => (ticket.type === 'deutschlandticket' ? 'Deutschlandticket' : `Verbundticket ${ticket.net}`),
     laendertickets: [{ id: 'bayern-ticket', label: 'Bayern-Ticket' }],
+    verbuende: [{ id: 'naldo', label: 'naldo (Neckar-Alb-Donau)' }],
     suggestStops: vi.fn(async (text) => (text.startsWith('Rott') ? ['Rottenburg (Neckar)', 'Rottweil'] : [])),
   };
   loadEngine.mockResolvedValue(engine);

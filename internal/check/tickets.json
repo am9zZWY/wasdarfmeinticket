@@ -3,6 +3,12 @@
   "netAliases": {
     "naldo": "tub"
   },
+  "verbuende": [
+    {"id": "naldo", "label": "naldo (Neckar-Alb-Donau)"},
+    {"id": "vhb", "label": "VHB (Hegau-Bodensee)"},
+    {"id": "vgn", "label": "VGN (Großraum Nürnberg)"},
+    {"id": "mvv", "label": "MVV (München)"}
+  ],
   "laendertickets": [
     {
       "id": "baden-wuerttemberg-ticket",

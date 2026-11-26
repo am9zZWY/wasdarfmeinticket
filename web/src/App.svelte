@@ -128,7 +128,7 @@
       <p class="verdict invalid" role="alert">Die App konnte nicht starten: {engineError}</p>
     {/if}
 
-    <Tickets bind:tickets laendertickets={engine?.laendertickets ?? []} {suggestStops} labelOf={(ticket) => engine?.ticketLabel(ticket) || ticket.type} />
+    <Tickets bind:tickets laendertickets={engine?.laendertickets ?? []} verbuende={engine?.verbuende ?? []} {suggestStops} labelOf={(ticket) => engine?.ticketLabel(ticket) || ticket.type} />
 
     <form class="card" onsubmit={check} id="connection">
       <div class="card-head">

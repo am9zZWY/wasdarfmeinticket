@@ -46,5 +46,6 @@ async function start() {
     describeLink: (text) => JSON.parse(engine.describeLink(text)),
     ticketLabel: (ticket) => engine.ticketLabel(JSON.stringify(ticket)),
     laendertickets: JSON.parse(engine.laendertickets),
+    verbuende: JSON.parse(engine.verbuende),
   };
 }
