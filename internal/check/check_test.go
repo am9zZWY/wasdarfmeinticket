@@ -252,7 +252,7 @@ func TestValidate(t *testing.T) {
 	bad := []Ticket{
 		{},
 		{Type: "bahncard100"},
-		{Type: TypeLaenderticket, Name: "hessenticket"},
+		{Type: TypeLaenderticket, Name: "berlin-ticket"},
 		{Type: TypeVerbund, Zones: []string{"1"}},
 		{Type: TypeVerbund, From: "Tübingen Hbf"},
 	}
@@ -260,5 +260,71 @@ func TestValidate(t *testing.T) {
 		if Validate(ticket) == nil {
 			t.Errorf("Validate(%+v): expected error", ticket)
 		}
+	}
+}
+
+// A planner that knows the Verbund but no zones confirms a whole-network
+// ticket, never a zone ticket, and a route ticket cannot get zones from it.
+func TestVerbundWithoutZones(t *testing.T) {
+	vbb := tariff.Assessment{Matched: true, Source: "VBB", KnownNets: []string{"vbb"}, Zones: []tariff.ZoneSet{{Net: "vbb"}}}
+	ride := leg(journey.ProductSBahn, at(24, 10))
+	if verdict, reason := checkLeg(Ticket{Type: TypeVerbund, Net: "vbb"}, ride, vbb); verdict != Valid {
+		t.Errorf("whole network: %s %s", verdict, reason)
+	}
+	if verdict, reason := checkLeg(Ticket{Type: TypeVerbund, Net: "vbb", Zones: []string{"A", "B"}}, ride, vbb); verdict != Unknown {
+		t.Errorf("zone ticket: %s %s", verdict, reason)
+	}
+	if _, err := (Ticket{Type: TypeVerbund, From: "Berlin", To: "Potsdam"}).WithZones(vbb.Zones); err == nil {
+		t.Error("route ticket got a Verbund without zones")
+	}
+}
+
+// Ländertickets without a planner answer hold by rule in local trains whose
+// stops all lie in the ticket's states.
+func TestLaenderticketStates(t *testing.T) {
+	ride := func(product string, ids ...string) journey.Leg {
+		l := leg(product, at(24, 10))
+		for _, id := range ids {
+			l.Stops = append(l.Stops, journey.Stop{ID: id})
+		}
+		return l
+	}
+	niedersachsen := Ticket{Type: TypeLaenderticket, Name: "niedersachsen-ticket"}
+	for _, test := range []struct {
+		name string
+		leg  journey.Leg
+		want Verdict
+	}{
+		{"Bremen to Oldenburg", ride(journey.ProductRegional, "de:04011:1", "de:03403:2"), Valid},
+		{"via Westphalia", ride(journey.ProductRegional, "de:03404:1", "de:05515:2", "de:03454:3"), Unknown},
+		{"bus", ride(journey.ProductBus, "de:03241:1", "de:03241:2"), Unknown},
+		{"no station ids", ride(journey.ProductRegional), Unknown},
+	} {
+		if verdict, reason := checkLeg(niedersachsen, test.leg, noMatch); verdict != test.want {
+			t.Errorf("%s: %s %s, want %s", test.name, verdict, reason, test.want)
+		}
+	}
+	early := ride(journey.ProductRegional, "de:11000:1", "de:12054:2")
+	early.Departure = at(24, 7)
+	if verdict, _ := checkLeg(Ticket{Type: TypeLaenderticket, Name: "brandenburg-berlin-ticket"}, early, noMatch); verdict != Invalid {
+		t.Errorf("Brandenburg-Berlin-Ticket at 7:30 on a Tuesday: %s", verdict)
+	}
+}
+
+// A zoneless Verbund along the route does not compete with one that has zones.
+func TestWithZonesIgnoresZonelessVerbund(t *testing.T) {
+	found := []tariff.ZoneSet{{Net: "rmv"}, {Net: "vrn", Zones: []string{"94", "104"}}}
+	ticket, err := (Ticket{Type: TypeVerbund, From: "Weinheim", To: "Mannheim"}).WithZones(found)
+	if err != nil || ticket.Net != "vrn" || len(ticket.Zones) != 2 {
+		t.Errorf("ticket = %+v, err = %v", ticket, err)
+	}
+}
+
+// Long-distance trains stay unknown for the Deutschlandticket when only a
+// source without the local twin (HAFAS) could have answered.
+func TestICWithoutTwinStaysUnknown(t *testing.T) {
+	ic := leg(journey.ProductECIC, at(24, 10))
+	if verdict, reason := checkLeg(Ticket{Type: TypeDeutschlandticket}, ic, tariff.Assessment{Note: tariff.NotCovered}); verdict != Unknown {
+		t.Errorf("IC: %s %s", verdict, reason)
 	}
 }

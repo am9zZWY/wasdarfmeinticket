@@ -1,26 +1,250 @@
 {
   "deutschlandticketPattern": "(?i)deutschland-?ticket|d-ticket",
   "netAliases": {
-    "naldo": "tub"
+    "naldo": "tub",
+    "ding": "din",
+    "vvo": "voe",
+    "vrs": "rlt",
+    "westfalentarif": "wtb",
+    "vrb": "bs",
+    "sh-tarif": "sh"
   },
   "verbuende": [
-    {"id": "naldo", "label": "naldo (Neckar-Alb-Donau)"},
-    {"id": "vhb", "label": "VHB (Hegau-Bodensee)"},
-    {"id": "vgn", "label": "VGN (Großraum Nürnberg)"},
-    {"id": "mvv", "label": "MVV (München)"}
+    {
+      "id": "naldo",
+      "label": "naldo (Neckar-Alb-Donau)"
+    },
+    {
+      "id": "vhb",
+      "label": "VHB (Hegau-Bodensee)"
+    },
+    {
+      "id": "vvs",
+      "label": "VVS (Stuttgart)"
+    },
+    {
+      "id": "kvv",
+      "label": "KVV (Karlsruhe)"
+    },
+    {
+      "id": "vrn",
+      "label": "VRN (Rhein-Neckar)"
+    },
+    {
+      "id": "ding",
+      "label": "DING (Donau-Iller)"
+    },
+    {
+      "id": "vgn",
+      "label": "VGN (Großraum Nürnberg)"
+    },
+    {
+      "id": "mvv",
+      "label": "MVV (München)"
+    },
+    {
+      "id": "avv",
+      "label": "AVV (Augsburg)"
+    },
+    {
+      "id": "vvo",
+      "label": "VVO (Oberelbe, Dresden)"
+    },
+    {
+      "id": "vrr",
+      "label": "VRR (Rhein-Ruhr)"
+    },
+    {
+      "id": "vrs",
+      "label": "VRS (Rhein-Sieg)"
+    },
+    {
+      "id": "westfalentarif",
+      "label": "Westfalentarif"
+    },
+    {
+      "id": "gvh",
+      "label": "GVH (Hannover)"
+    },
+    {
+      "id": "vrb",
+      "label": "VRB (Braunschweig)"
+    },
+    {
+      "id": "rmv",
+      "label": "RMV (Rhein-Main)"
+    },
+    {
+      "id": "nvv",
+      "label": "NVV (Nordhessen)"
+    },
+    {
+      "id": "vbb",
+      "label": "VBB (Berlin-Brandenburg)"
+    },
+    {
+      "id": "sh-tarif",
+      "label": "SH-Tarif (Schleswig-Holstein)"
+    },
+    {
+      "id": "vmt",
+      "label": "VMT (Mittelthüringen)"
+    },
+    {
+      "id": "vbn",
+      "label": "VBN (Bremen/Niedersachsen)"
+    },
+    {
+      "id": "vsn",
+      "label": "VSN (Südniedersachsen)"
+    },
+    {
+      "id": "vvw",
+      "label": "VVW (Warnow, Rostock)"
+    },
+    {
+      "id": "saarvv",
+      "label": "saarVV (Saarland)"
+    },
+    {
+      "id": "mdv",
+      "label": "MDV (Mitteldeutschland, Leipzig/Halle)"
+    },
+    {
+      "id": "marego",
+      "label": "marego (Magdeburg)"
+    }
   ],
   "laendertickets": [
     {
       "id": "baden-wuerttemberg-ticket",
       "label": "Baden-Württemberg-Ticket",
       "productPattern": "(?i)^baden-württemberg-ticket",
-      "weekdayStartHour": 9
+      "weekdayStartHour": 9,
+      "states": [
+        "08"
+      ]
     },
     {
       "id": "bayern-ticket",
       "label": "Bayern-Ticket",
       "productPattern": "(?i)^bayern[- ]ticket( tag.*)?$",
-      "weekdayStartHour": 9
+      "weekdayStartHour": 9,
+      "states": [
+        "09"
+      ]
+    },
+    {
+      "id": "brandenburg-berlin-ticket",
+      "label": "Brandenburg-Berlin-Ticket",
+      "productPattern": "(?i)^brandenburg-berlin-ticket",
+      "weekdayStartHour": 9,
+      "states": [
+        "11",
+        "12"
+      ]
+    },
+    {
+      "id": "hessenticket",
+      "label": "Hessenticket",
+      "productPattern": "(?i)^hessen-?ticket",
+      "weekdayStartHour": 0,
+      "states": [
+        "06"
+      ]
+    },
+    {
+      "id": "mecklenburg-vorpommern-ticket",
+      "label": "Mecklenburg-Vorpommern-Ticket",
+      "productPattern": "(?i)^mecklenburg-vorpommern-ticket",
+      "weekdayStartHour": 9,
+      "states": [
+        "13"
+      ]
+    },
+    {
+      "id": "niedersachsen-ticket",
+      "label": "Niedersachsen-Ticket",
+      "productPattern": "(?i)^niedersachsen-ticket",
+      "weekdayStartHour": 0,
+      "states": [
+        "03",
+        "04",
+        "02"
+      ]
+    },
+    {
+      "id": "24hticket-nrw",
+      "label": "24hTicket NRW",
+      "productPattern": "(?i)^24h-?ticket nrw",
+      "weekdayStartHour": 0,
+      "states": [
+        "05"
+      ]
+    },
+    {
+      "id": "rheinland-pfalz-saarland-ticket",
+      "label": "Rheinland-Pfalz/Saarland-Ticket",
+      "productPattern": "(?i)^rheinland-pfalz",
+      "weekdayStartHour": 9,
+      "states": [
+        "07",
+        "10"
+      ]
+    },
+    {
+      "id": "saarland-ticket",
+      "label": "Saarland-Ticket",
+      "productPattern": "(?i)^saarland-ticket",
+      "weekdayStartHour": 9,
+      "states": [
+        "10",
+        "07"
+      ]
+    },
+    {
+      "id": "sachsen-ticket",
+      "label": "Sachsen-Ticket",
+      "productPattern": "(?i)^sachsen-ticket",
+      "weekdayStartHour": 9,
+      "states": [
+        "14",
+        "15",
+        "16"
+      ]
+    },
+    {
+      "id": "sachsen-anhalt-ticket",
+      "label": "Sachsen-Anhalt-Ticket",
+      "productPattern": "(?i)^sachsen-anhalt-ticket",
+      "weekdayStartHour": 9,
+      "states": [
+        "14",
+        "15",
+        "16"
+      ]
+    },
+    {
+      "id": "thueringen-ticket",
+      "label": "Thüringen-Ticket",
+      "productPattern": "(?i)^thüringen-ticket",
+      "weekdayStartHour": 9,
+      "states": [
+        "14",
+        "15",
+        "16"
+      ]
+    },
+    {
+      "id": "schleswig-holstein-ticket",
+      "label": "Schleswig-Holstein-Ticket",
+      "productPattern": "(?i)^schleswig-holstein-ticket",
+      "weekdayStartHour": 9,
+      "states": [
+        "01",
+        "02",
+        "13"
+      ]
     },
     {
       "id": "quer-durchs-land-ticket",

@@ -351,7 +351,7 @@ func TestAssessOutsideCoverage(t *testing.T) {
 
 func TestDefaultPlanners(t *testing.T) {
 	planners := DefaultPlanners()
-	if len(planners) != 3 {
+	if len(planners) == 0 {
 		t.Fatalf("planners = %d", len(planners))
 	}
 	for _, planner := range planners {

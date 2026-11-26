@@ -4,7 +4,8 @@
 // WebAssembly and offers its functions to the page as the global object
 // "wasdarfmeinticket":
 //
-//	check(requestJSON, onProgress)  Promise of {view, markdown} as JSON
+//	check(requestJSON, onProgress, signal)  Promise of {view, markdown} as JSON;
+//	                                an AbortSignal as signal stops the check
 //	resolveTicket(ticketJSON)       Promise of the ticket with net and zones as JSON
 //	suggestStops(text)              Promise of the names of matching stops as JSON
 //	describeLink(text)              what a pasted link is, as JSON
@@ -31,7 +32,9 @@ import (
 	"github.com/am9zZWY/wasdarfmeinticket/internal/dblink"
 	"github.com/am9zZWY/wasdarfmeinticket/internal/journey"
 	"github.com/am9zZWY/wasdarfmeinticket/internal/progress"
+	"github.com/am9zZWY/wasdarfmeinticket/internal/tariff"
 	"github.com/am9zZWY/wasdarfmeinticket/internal/tariff/efa"
+	"github.com/am9zZWY/wasdarfmeinticket/internal/tariff/hafas"
 	"github.com/am9zZWY/wasdarfmeinticket/internal/timetable/transitous"
 )
 
@@ -52,7 +55,10 @@ func main() {
 	// only fails, once per leg.
 	planners.Planners = slices.DeleteFunc(planners.Planners, func(planner efa.Planner) bool { return !planner.Browser })
 	planners.Cache = store
-	service := &api.Service{DB: db, Tariff: planners, Timetable: timetable, Stops: timetable, Cache: store}
+	fares := hafas.New(journey.Berlin)
+	fares.Providers = slices.DeleteFunc(fares.Providers, func(provider hafas.Provider) bool { return !provider.Browser })
+	fares.Cache = store
+	service := &api.Service{DB: db, Tariff: tariff.Sources{planners, fares}, Timetable: timetable, Stops: timetable, Cache: store}
 
 	js.Global().Set("wasdarfmeinticket", map[string]any{
 		"check":          async(func(args []js.Value) (string, error) { return runCheck(service, args) }),
@@ -77,6 +83,15 @@ func runCheck(service *api.Service, args []js.Value) (string, error) {
 	defer cancel()
 	if len(args) > 1 && args[1].Type() == js.TypeFunction {
 		ctx = progress.With(ctx, func(message string) { args[1].Invoke(message) })
+	}
+	if len(args) > 2 && args[2].Type() == js.TypeObject {
+		onAbort := js.FuncOf(func(js.Value, []js.Value) any { cancel(); return nil })
+		defer onAbort.Release()
+		args[2].Call("addEventListener", "abort", onAbort)
+		defer args[2].Call("removeEventListener", "abort", onAbort)
+		if args[2].Get("aborted").Bool() {
+			cancel()
+		}
 	}
 	response, err := service.Check(ctx, request)
 	if err != nil {

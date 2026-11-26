@@ -3,6 +3,7 @@
 package httpx
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -78,6 +79,12 @@ func IsStatus(err error, codes ...int) bool {
 
 // GetJSON fetches url and decodes the JSON response into out.
 func (client *Client) GetJSON(ctx context.Context, url string, out any) error {
+	return client.PostJSON(ctx, url, nil, out)
+}
+
+// PostJSON sends body as JSON to url and decodes the JSON response into
+// out. A nil body makes it a GET request.
+func (client *Client) PostJSON(ctx context.Context, url string, body []byte, out any) error {
 	var lastErr error
 	wait := client.Backoff
 	for attempt := 0; attempt <= client.Retries; attempt++ {
@@ -89,7 +96,7 @@ func (client *Client) GetJSON(ctx context.Context, url string, out any) error {
 			}
 			wait *= 2
 		}
-		retry, err := client.once(ctx, url, out)
+		retry, err := client.once(ctx, url, body, out)
 		if err == nil {
 			return nil
 		}
@@ -102,10 +109,17 @@ func (client *Client) GetJSON(ctx context.Context, url string, out any) error {
 }
 
 // once performs a single attempt and reports whether a retry makes sense.
-func (client *Client) once(ctx context.Context, url string, out any) (bool, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+func (client *Client) once(ctx context.Context, url string, body []byte, out any) (bool, error) {
+	method, reader := http.MethodGet, io.Reader(nil)
+	if body != nil {
+		method, reader = http.MethodPost, bytes.NewReader(body)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, url, reader)
 	if err != nil {
 		return false, err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
 	}
 	if sendUserAgent {
 		req.Header.Set("User-Agent", client.UserAgent)

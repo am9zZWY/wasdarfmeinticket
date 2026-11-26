@@ -114,5 +114,6 @@
     </details>
   {/each}
 
+  <p class="hint">Ohne Gewähr. Verbindlich sind die Tarifbestimmungen der Verkehrsunternehmen.</p>
   <button type="button" class="quiet" onclick={copy}>{copied ? 'Kopiert' : 'Ergebnis als Text kopieren'}</button>
 </section>

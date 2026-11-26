@@ -616,3 +616,15 @@ func TestHealthz(t *testing.T) {
 		t.Errorf("status %d", rec.Code)
 	}
 }
+
+// A stopped check returns no verdicts built on cut-off answers.
+func TestCheckStopped(t *testing.T) {
+	var calls []int
+	service := &Service{DB: fakeDB{connection: testJourney()}, Tariff: fakeTariff{&calls}}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := service.Check(ctx, Request{Link: link, Tickets: []check.Ticket{{Type: check.TypeDeutschlandticket}}})
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("err = %v, want context.Canceled", err)
+	}
+}

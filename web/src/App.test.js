@@ -208,3 +208,22 @@ test('finds tickets by name or abbreviation and takes unknown text as a Verbund'
     ]),
   );
 });
+
+test('stops a running check', async () => {
+  localStorage.setItem('wasdarfmeinticket.tickets', JSON.stringify([{ type: 'deutschlandticket' }]));
+  engine.check.mockImplementationOnce(
+    (request, onProgress, signal) => new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(new Error('context canceled')))),
+  );
+  render(App);
+
+  await fireEvent.click(await screen.findByRole('button', { name: 'Link' }));
+  await fireEvent.input(await screen.findByLabelText('Link von bahn.de oder aus dem DB Navigator'), {
+    target: { value: 'https://www.bahn.de/buchung/fahrplan/suche#so=A&zo=B' },
+  });
+  await fireEvent.click(await checkButton());
+  await fireEvent.click(await screen.findByRole('button', { name: 'Abbrechen' }));
+
+  expect((await screen.findByRole('alert')).textContent).toBe('Abgebrochen.');
+  expect(screen.queryByRole('button', { name: 'Abbrechen' })).toBeNull();
+  expect((await checkButton()).disabled).toBe(false);
+});

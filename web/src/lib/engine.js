@@ -27,9 +27,10 @@ async function start() {
   // session types few enough texts for that.
   const suggestions = new Map();
   return {
-    // check runs a check; onProgress receives each progress message.
-    // It resolves with { view, markdown }.
-    check: async (request, onProgress) => JSON.parse(await engine.check(JSON.stringify(request), onProgress)),
+    // check runs a check; onProgress receives each progress message, and
+    // aborting signal (an AbortSignal) stops it. It resolves with
+    // { view, markdown }.
+    check: async (request, onProgress, signal) => JSON.parse(await engine.check(JSON.stringify(request), onProgress, signal)),
     // describeLink says what a pasted text is: { kind, lookupURL?, error? }
     // with kind "share", "connection", "search" or "none".
     // suggestStops resolves with the names of the stops matching a partly

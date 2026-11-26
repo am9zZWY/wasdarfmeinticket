@@ -67,6 +67,11 @@ func (ticket Ticket) WithZones(found []tariff.ZoneSet) (Ticket, error) {
 	merged := map[string][]string{}
 	var nets []string
 	for _, zoneSet := range found {
+		// A Verbund known without zones cannot describe the ticket, unless
+		// the ticket names it (that then fails below with a clear message).
+		if len(zoneSet.Zones) == 0 && zoneSet.Net != canonicalNet(ticket.Net) {
+			continue
+		}
 		if _, ok := merged[zoneSet.Net]; !ok {
 			nets = append(nets, zoneSet.Net)
 		}
@@ -88,6 +93,10 @@ func (ticket Ticket) WithZones(found []tariff.ZoneSet) (Ticket, error) {
 		return ticket, fmt.Errorf("the ticket's route touches several Verbünde (%s), set net to choose one", strings.Join(displayNets(nets), ", "))
 	default:
 		net = nets[0]
+	}
+	if len(merged[net]) == 0 {
+		// Without zones the ticket would become one for the whole Verbund.
+		return ticket, fmt.Errorf("the planner for Verbund %q names no zones, give the ticket's zones or net", DisplayNet(net))
 	}
 	ticket.Net, ticket.Zones = DisplayNet(net), merged[net]
 	return ticket, nil
@@ -150,7 +159,10 @@ type laenderticket struct {
 	ProductPattern   string `json:"productPattern"`
 	WeekdayStartHour int    `json:"weekdayStartHour"`
 	NationwideTrains bool   `json:"nationwideTrains"`
-	product          *regexp.Regexp
+	// States are the two-digit state codes (as in station ids, "de:08...")
+	// in whose local trains the ticket is valid.
+	States  []string `json:"states"`
+	product *regexp.Regexp
 }
 
 var rules = func() (loaded struct {
@@ -365,12 +377,21 @@ func laender(stateTicket *laenderticket, leg journey.Leg, assessment tariff.Asse
 	if assessment.Matched && offers(assessment, stateTicket.product) {
 		return Valid, alsoLocal(leg, assessment) + "von der Tarifauskunft " + assessment.Source + " bestätigt"
 	}
-	if stateTicket.NationwideTrains {
+	if stateTicket.NationwideTrains || len(stateTicket.States) > 0 {
 		if abroad(leg) {
 			return Unknown, reasonAbroad
 		}
+		if !stateTicket.NationwideTrains {
+			switch inside, known := withinStates(leg, stateTicket.States); {
+			case !known:
+				return Unknown, "Bundesland von Start oder Ziel unbekannt; Geltungsbereich des " + stateTicket.Label + " nicht prüfbar"
+			case !inside:
+				// ponytail: border extensions (e.g. to Basel or Ulm) are not modelled, hence unknown, not invalid.
+				return Unknown, "Fahrt verlässt den Geltungsbereich des " + stateTicket.Label + "; Ausnahmen an den Grenzen sind nicht erfasst"
+			}
+		}
 		if leg.Product == journey.ProductRegional || leg.Product == journey.ProductSBahn {
-			return Valid, "Nahverkehrszug; gilt nach Regel, nicht durch eine Tarifauskunft bestätigt"
+			return Valid, "Nahverkehrszug im Geltungsbereich; gilt nach Regel, nicht durch eine Tarifauskunft bestätigt"
 		}
 		return Unknown, "gilt in Nahverkehrszügen; für " + leg.Product + " nicht bestätigt"
 	}
@@ -395,6 +416,9 @@ func verbund(ticket Ticket, leg journey.Leg, assessment tariff.Assessment) (Verd
 		}
 		if ticket.Network {
 			return Valid, "Abschnitt liegt im Verbund " + ticket.Net + " " + bySource(assessment)
+		}
+		if len(zoneSet.Zones) == 0 {
+			return Unknown, "Abschnitt liegt im Verbund " + ticket.Net + ", die Tarifauskunft nennt aber keine Zonen " + bySource(assessment)
 		}
 		// The planner may give the zones in two notations.
 		for index, need := range [][]string{zoneSet.Zones, zoneSet.ZonesUnited} {
@@ -470,6 +494,31 @@ func abroad(leg journey.Leg) bool {
 		}
 	}
 	return false
+}
+
+// withinStates reports whether every stop of the leg lies in one of the
+// states, read from the station ids ("de:08335:6554" is in state 08).
+// known is false when the first or last stop carries no such id.
+func withinStates(leg journey.Leg, states []string) (inside, known bool) {
+	stops := leg.Stops
+	if len(stops) < 2 {
+		stops = []journey.Stop{leg.Origin, leg.Destination}
+	}
+	state := func(stop journey.Stop) string {
+		if len(stop.ID) >= 5 && strings.HasPrefix(stop.ID, "de:") {
+			return stop.ID[3:5]
+		}
+		return ""
+	}
+	if state(stops[0]) == "" || state(stops[len(stops)-1]) == "" {
+		return false, false
+	}
+	for _, stop := range stops {
+		if code := state(stop); code != "" && !slices.Contains(states, code) {
+			return false, true
+		}
+	}
+	return true, true
 }
 
 func lineName(leg journey.Leg) string {

@@ -31,16 +31,7 @@ var plannersJSON []byte
 const maxStopDistance = 1500.0 // metres
 
 // BBox is a latitude/longitude rectangle.
-type BBox struct {
-	MinLat float64 `json:"minLat"`
-	MaxLat float64 `json:"maxLat"`
-	MinLon float64 `json:"minLon"`
-	MaxLon float64 `json:"maxLon"`
-}
-
-func (box BBox) contains(stop journey.Stop) bool {
-	return stop.Lat >= box.MinLat && stop.Lat <= box.MaxLat && stop.Lon >= box.MinLon && stop.Lon <= box.MaxLon
-}
+type BBox = tariff.BBox
 
 // Planner is one EFA installation.
 type Planner struct {
@@ -119,12 +110,12 @@ func (engine *Engine) Assess(ctx context.Context, leg journey.Leg) tariff.Assess
 	}
 	var covering []Planner
 	for _, planner := range engine.Planners {
-		if planner.BBox.contains(leg.Origin) && planner.BBox.contains(leg.Destination) {
+		if planner.BBox.Covers(leg) {
 			covering = append(covering, planner)
 		}
 	}
 	if len(covering) == 0 {
-		return tariff.Assessment{Note: "no tariff planner covers this leg"}
+		return tariff.Assessment{Note: tariff.NotCovered}
 	}
 	answers := make([]tariff.Assessment, len(covering))
 	errs := make([]error, len(covering))
