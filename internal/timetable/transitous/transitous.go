@@ -323,27 +323,39 @@ func (client *Client) SuggestStops(ctx context.Context, text string) ([]journey.
 	return client.geocode(ctx, text)
 }
 
-// geocode asks Transitous for the stops matching a text, best first;
-// places that are not stops are left out.
+// stopCountries are the countries whose stops are offered. Transitous
+// searches the whole world, so "mün" would otherwise find Hong Kong first.
+// Trips start or end in Germany, sometimes just across the border.
+var stopCountries = []string{"DE", "AT", "CH"} // ponytail: DACH only; add neighbours if trips to e.g. Strasbourg matter
+
+// geocode asks Transitous for the stops matching a text, best first, German
+// stops before the others; places that are not stops are left out.
 func (client *Client) geocode(ctx context.Context, text string) ([]journey.Stop, error) {
 	var matches []struct {
-		Type string  `json:"type"`
-		Name string  `json:"name"`
-		ID   string  `json:"id"`
-		Lat  float64 `json:"lat"`
-		Lon  float64 `json:"lon"`
+		Type    string  `json:"type"`
+		Name    string  `json:"name"`
+		ID      string  `json:"id"`
+		Lat     float64 `json:"lat"`
+		Lon     float64 `json:"lon"`
+		Country string  `json:"country"`
 	}
 	query := url.Values{"text": {text}}
 	if err := client.HTTP.GetJSON(ctx, client.BaseURL+"/v1/geocode?"+query.Encode(), &matches); err != nil {
 		return nil, fmt.Errorf("transitous: look up stop %q: %w", text, err)
 	}
-	var found []journey.Stop
+	var german, neighbours []journey.Stop
 	for _, match := range matches {
-		if match.Type == "STOP" && (match.Lat != 0 || match.Lon != 0) {
-			found = append(found, journey.Stop{Name: match.Name, ID: stationID(match.ID), Lat: match.Lat, Lon: match.Lon})
+		if match.Type != "STOP" || (match.Lat == 0 && match.Lon == 0) || !slices.Contains(stopCountries, match.Country) {
+			continue
+		}
+		stop := journey.Stop{Name: match.Name, ID: stationID(match.ID), Lat: match.Lat, Lon: match.Lon}
+		if match.Country == "DE" {
+			german = append(german, stop)
+		} else {
+			neighbours = append(neighbours, stop)
 		}
 	}
-	return found, nil
+	return append(german, neighbours...), nil
 }
 
 func stops(plannerLeg planLeg) []journey.Stop {

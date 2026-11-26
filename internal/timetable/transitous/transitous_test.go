@@ -22,7 +22,11 @@ func testClient(t *testing.T, check func(request *http.Request)) *Client {
 			// Shape recorded from Transitous: places and stops mixed.
 			if request.URL.Query().Get("text") == "Rottenburg(Neckar)" {
 				writer.Write([]byte(`[{"type":"PLACE","name":"Rottenburg am Neckar","id":"node/240090562","lat":48.47696,"lon":8.9336788},
-					{"type":"STOP","name":"Rottenburg (Neckar)","id":"de-amarillo-bw_de:08416:1005","lat":48.472434,"lon":8.935857}]`))
+					{"type":"STOP","name":"Rottenburg (Neckar)","id":"de-amarillo-bw_de:08416:1005","lat":48.472434,"lon":8.935857,"country":"DE"}]`))
+			} else if request.URL.Query().Get("text") == "Münch" {
+				writer.Write([]byte(`[{"type":"STOP","name":"Munch","id":"fr_1","lat":48.1,"lon":7.3,"country":"FR"},
+					{"type":"STOP","name":"Münchenstein","id":"ch_1","lat":47.5,"lon":7.6,"country":"CH"},
+					{"type":"STOP","name":"München Hbf","id":"de-DELFI_de:09162:6","lat":48.14,"lon":11.56,"country":"DE"}]`))
 			} else {
 				writer.Write([]byte(`[{"type":"PLACE","name":"Somewhere","id":"node/1","lat":1,"lon":1}]`))
 			}
@@ -226,6 +230,15 @@ func TestSuggestStops(t *testing.T) {
 	}
 	if stops, err := client.SuggestStops(context.Background(), "nowhere"); err != nil || len(stops) != 0 {
 		t.Errorf("only places: stops = %+v, %v", stops, err)
+	}
+}
+
+// Stops outside Germany, Austria and Switzerland are dropped, German ones
+// come first.
+func TestSuggestStopsDACH(t *testing.T) {
+	stops, err := testClient(t, nil).SuggestStops(context.Background(), "Münch")
+	if err != nil || len(stops) != 2 || stops[0].Name != "München Hbf" || stops[1].Name != "Münchenstein" {
+		t.Errorf("stops = %+v, %v", stops, err)
 	}
 }
 
