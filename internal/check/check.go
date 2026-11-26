@@ -156,6 +156,7 @@ type laenderticket struct {
 var rules = func() (loaded struct {
 	DeutschlandticketPattern string            `json:"deutschlandticketPattern"`
 	NetAliases               map[string]string `json:"netAliases"`
+	Verbuende                []Option          `json:"verbuende"`
 	Laendertickets           []*laenderticket  `json:"laendertickets"`
 	dticket                  *regexp.Regexp
 }) {
@@ -182,6 +183,12 @@ func LaenderticketOptions() []Option {
 		options = append(options, Option{ID: stateTicket.ID, Label: stateTicket.Label})
 	}
 	return options
+}
+
+// VerbundOptions lists the Verbünde offered for type "verbund"; any other
+// net code is accepted too.
+func VerbundOptions() []Option {
+	return rules.Verbuende
 }
 
 // LaenderticketLabel returns the display name for a "laenderticket" name.

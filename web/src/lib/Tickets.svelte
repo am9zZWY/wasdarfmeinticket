@@ -2,16 +2,7 @@
   // The tickets the user holds, as chips, with a picker to add one.
   import Suggest from './Suggest.svelte';
 
-  let { tickets = $bindable([]), laendertickets = [], suggestStops, labelOf } = $props();
-
-  // ponytail: the Verbünde whose zones the engine can verify (internal/tariff/efa/planners.json);
-  // serve this list from the engine if it grows.
-  const verbuende = [
-    { net: 'naldo', label: 'naldo (Neckar-Alb-Donau)' },
-    { net: 'vhb', label: 'VHB (Hegau-Bodensee)' },
-    { net: 'vgn', label: 'VGN (Großraum Nürnberg)' },
-    { net: 'mvv', label: 'MVV (München)' },
-  ];
+  let { tickets = $bindable([]), laendertickets = [], verbuende = [], suggestStops, labelOf } = $props();
 
   // The picker opens by itself as long as there is no ticket.
   let adding = $state(tickets.length === 0);
@@ -21,7 +12,7 @@
   let options = $derived([
     { label: 'Deutschlandticket', kind: 'bundesweit', ticket: { type: 'deutschlandticket' } },
     ...laendertickets.map((option) => ({ label: option.label, kind: 'Bundesland', ticket: { type: 'laenderticket', name: option.id } })),
-    ...verbuende.map((option) => ({ label: option.label, kind: 'Verkehrsverbund', net: option.net, ticket: { type: 'verbund' } })),
+    ...verbuende.map((option) => ({ label: option.label, kind: 'Verkehrsverbund', net: option.id, ticket: { type: 'verbund' } })),
   ].sort((a, b) => a.label.localeCompare(b.label, 'de', { sensitivity: 'base' })));
 
   let query = $state('');
