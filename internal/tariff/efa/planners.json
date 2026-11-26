@@ -15,6 +15,7 @@
     "name": "EFA-BW",
     "baseURL": "https://www.efa-bw.de/nvbw/",
     "nets": ["tub", "vhb", "fds"],
+    "browser": true,
     "bbox": {"minLat": 47.5, "maxLat": 49.8, "minLon": 7.5, "maxLon": 10.5}
   }
 ]

@@ -49,6 +49,9 @@ type Planner struct {
 	// Nets are the Verbund codes this planner is verified to report zones for.
 	Nets []string `json:"nets"`
 	BBox BBox     `json:"bbox"`
+	// Browser is set when the planner allows cross-origin requests, so the
+	// browser app can ask it directly.
+	Browser bool `json:"browser"`
 }
 
 // DefaultPlanners returns the built-in planner list, most specific first.
