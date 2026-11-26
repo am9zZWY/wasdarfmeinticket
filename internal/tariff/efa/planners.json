@@ -6,16 +6,49 @@
     "bbox": {"minLat": 47.6, "maxLat": 48.7, "minLon": 10.9, "maxLon": 12.4}
   },
   {
+    "name": "KVV",
+    "baseURL": "https://projekte.kvv-efa.de/sl3/",
+    "nets": ["kvv"],
+    "browser": true,
+    "bbox": {"minLat": 48.6, "maxLat": 49.3, "minLon": 8.0, "maxLon": 8.9}
+  },
+  {
+    "name": "VVO",
+    "baseURL": "https://efa.vvo-online.de/std3/",
+    "nets": ["voe"],
+    "browser": true,
+    "bbox": {"minLat": 50.6, "maxLat": 51.5, "minLon": 13.0, "maxLon": 14.8}
+  },
+  {
+    "name": "VRR",
+    "baseURL": "https://efa.vrr.de/vrr/",
+    "nets": ["vrr", "rlt"],
+    "bbox": {"minLat": 50.5, "maxLat": 51.8, "minLon": 6.0, "maxLon": 7.8}
+  },
+  {
+    "name": "Westfalenfahrplan",
+    "baseURL": "https://www.westfalenfahrplan.de/nwl-efa/",
+    "nets": ["wtb"],
+    "browser": true,
+    "bbox": {"minLat": 50.8, "maxLat": 52.6, "minLon": 6.9, "maxLon": 9.5}
+  },
+  {
+    "name": "efa.de",
+    "baseURL": "https://www.efa.de/efa/",
+    "nets": ["gvh", "bs"],
+    "bbox": {"minLat": 51.8, "maxLat": 52.8, "minLon": 9.3, "maxLon": 11.1}
+  },
+  {
     "name": "Bahnland Bayern",
     "baseURL": "https://bahnland-bayern.de/efa/",
-    "nets": ["vgn"],
+    "nets": ["vgn", "avv"],
     "bbox": {"minLat": 47.2, "maxLat": 50.6, "minLon": 8.9, "maxLon": 13.9}
   },
   {
     "name": "EFA-BW",
     "baseURL": "https://www.efa-bw.de/nvbw/",
-    "nets": ["tub", "vhb", "fds"],
+    "nets": ["tub", "vhb", "fds", "vvs", "vrn", "din"],
     "browser": true,
-    "bbox": {"minLat": 47.5, "maxLat": 49.8, "minLon": 7.5, "maxLon": 10.5}
+    "bbox": {"minLat": 47.5, "maxLat": 49.8, "minLon": 7.0, "maxLon": 10.5}
   }
 ]

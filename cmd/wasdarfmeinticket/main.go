@@ -26,7 +26,9 @@ import (
 	"github.com/am9zZWY/wasdarfmeinticket/internal/dbapi"
 	"github.com/am9zZWY/wasdarfmeinticket/internal/journey"
 	"github.com/am9zZWY/wasdarfmeinticket/internal/progress"
+	"github.com/am9zZWY/wasdarfmeinticket/internal/tariff"
 	"github.com/am9zZWY/wasdarfmeinticket/internal/tariff/efa"
+	"github.com/am9zZWY/wasdarfmeinticket/internal/tariff/hafas"
 	"github.com/am9zZWY/wasdarfmeinticket/internal/timetable/transitous"
 )
 
@@ -49,7 +51,9 @@ func main() {
 	timetable.Cache = store
 	planners := efa.New(journey.Berlin)
 	planners.Cache = store
-	svc := &api.Service{DB: db, Tariff: planners, Timetable: timetable, Stops: timetable, Cache: store}
+	fares := hafas.New(journey.Berlin)
+	fares.Cache = store
+	svc := &api.Service{DB: db, Tariff: tariff.Sources{planners, fares}, Timetable: timetable, Stops: timetable, Cache: store}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 

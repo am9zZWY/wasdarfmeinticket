@@ -148,6 +148,11 @@ footer p {
   margin: 0 0 4px;
 }
 
+footer summary {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 /* Cards: the white boxes that hold the tickets, the connection and each leg. */
 .card {
   display: flex;
@@ -390,12 +395,14 @@ button:disabled {
 }
 
 .picker-row {
+  position: relative; /* the suggestions span the whole row, button included */
   display: flex;
   align-items: flex-end;
   gap: 8px;
 }
 
 .picker-row .suggest {
+  position: static;
   flex: 1;
   min-width: 0;
 }
@@ -432,9 +439,12 @@ button:disabled {
   gap: 12px;
   min-height: 44px;
   padding: 11px 10px;
-  border-radius: 7px;
   font-size: 15px;
   cursor: pointer;
+}
+
+.suggest [role='option'] + [role='option'] {
+  border-top: 1px solid var(--line);
 }
 
 .suggest [role='option']:hover,

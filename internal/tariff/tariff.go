@@ -3,6 +3,9 @@ package tariff
 
 import (
 	"context"
+	"slices"
+	"strings"
+	"sync"
 
 	"github.com/am9zZWY/wasdarfmeinticket/internal/journey"
 )
@@ -46,4 +49,70 @@ type Assessment struct {
 // now, an offline zone database later.
 type Source interface {
 	Assess(ctx context.Context, leg journey.Leg) Assessment
+}
+
+// NotCovered is the note of a source none of whose planners covers the leg.
+const NotCovered = "no tariff planner covers this leg"
+
+// Sources asks several sources at once and merges their answers.
+type Sources []Source
+
+// Assess implements Source.
+func (sources Sources) Assess(ctx context.Context, leg journey.Leg) Assessment {
+	answers := make([]Assessment, len(sources))
+	var waitGroup sync.WaitGroup
+	for index, source := range sources {
+		waitGroup.Go(func() { answers[index] = source.Assess(ctx, leg) })
+	}
+	waitGroup.Wait()
+	return Merge(answers)
+}
+
+// Merge combines answers for the same leg. A source that does not cover
+// the leg is left out of the note unless no source covers it.
+func Merge(answers []Assessment) Assessment {
+	var out Assessment
+	var sources, notes []string
+	for _, answer := range answers {
+		if answer.Note != "" && answer.Note != NotCovered {
+			notes = append(notes, answer.Note)
+		}
+		if !answer.Matched {
+			continue
+		}
+		out.Matched = true
+		sources = append(sources, answer.Source)
+		if out.LocalLine == "" {
+			out.LocalLine = answer.LocalLine
+		}
+		out.KnownNets = append(out.KnownNets, answer.KnownNets...)
+		out.Zones = append(out.Zones, answer.Zones...)
+		for _, product := range answer.Products {
+			if !slices.Contains(out.Products, product) {
+				out.Products = append(out.Products, product)
+			}
+		}
+	}
+	if len(notes) == 0 && !out.Matched {
+		notes = []string{NotCovered}
+	}
+	out.Source = strings.Join(sources, " + ")
+	out.Note = strings.Join(notes, "; ")
+	return out
+}
+
+// BBox is a latitude/longitude rectangle.
+type BBox struct {
+	MinLat float64 `json:"minLat"`
+	MaxLat float64 `json:"maxLat"`
+	MinLon float64 `json:"minLon"`
+	MaxLon float64 `json:"maxLon"`
+}
+
+// Covers reports whether both ends of the leg lie in the rectangle.
+func (box BBox) Covers(leg journey.Leg) bool {
+	inside := func(stop journey.Stop) bool {
+		return stop.Lat >= box.MinLat && stop.Lat <= box.MaxLat && stop.Lon >= box.MinLon && stop.Lon <= box.MaxLon
+	}
+	return inside(leg.Origin) && inside(leg.Destination)
 }

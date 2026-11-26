@@ -134,6 +134,11 @@ func (service *Service) Check(ctx context.Context, req Request) (Response, error
 		result.RefineVerbund(ctx, connection, resp.Tariff, partial)
 		resp.Results = append(resp.Results, result)
 	}
+	if err := ctx.Err(); err != nil {
+		// Stopped or timed out: the answers were cut off, so the verdicts
+		// would claim gaps that are not there.
+		return Response{}, err
+	}
 	resp.Coverage = check.Coverage(connection, resp.Results)
 	resp.Verdict = check.CoverageVerdict(resp.Coverage)
 	return resp, nil
