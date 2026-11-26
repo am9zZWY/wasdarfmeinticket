@@ -48,6 +48,9 @@ func main() {
 	timetable.Cache = store
 	planners := efa.New(journey.Berlin)
 	planners.Cache = store
+	// Planners without CORS headers are blocked by the browser; asking them
+	// only fails, once per leg.
+	planners.Planners = slices.DeleteFunc(planners.Planners, func(planner efa.Planner) bool { return !planner.Browser })
 	service := &api.Service{DB: db, Tariff: planners, Timetable: timetable, Stops: timetable, Cache: store}
 
 	js.Global().Set("wasdarfmeinticket", map[string]any{
